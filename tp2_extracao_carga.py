@@ -118,7 +118,7 @@ def criar_banco_e_popular(df_unificado: pd.DataFrame, caminho_db="vacinacao.db")
 
 # ---------- EXECUÇÃO COMPLETA ----------
 if __name__ == "__main__":
-    dados = coletar_dados_vacinacao(max_paginas=10, delay=1, salvar_arquivo=True)
+    dados = coletar_dados_vacinacao(max_paginas=100, delay=1, salvar_arquivo=True)
     df = unificar_jsons_em_tabela("dados_vacinacao_2025.json")
 
     # Garante que o schema.sql esteja presente antes de rodar

@@ -1,0 +1,15 @@
+
+[theme]
+primaryColor = "#007bff"               # Azul vivo – destaque em botões, sliders, links
+backgroundColor = "#f4f9ff"            # Azul bem claro – fundo geral (quase branco azulado)
+secondaryBackgroundColor = "#e1ecf7"   # Azul suave – caixas e painéis internos
+textColor = "#1c3b6f"                  # Azul escuro – ótima leitura sobre fundo claro
+font = "sans serif"
+
+
+[client]
+showSidebarNavigation = true
+
+[browser]
+gatherUsageStats = false
+
