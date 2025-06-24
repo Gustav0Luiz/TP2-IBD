@@ -39,19 +39,7 @@ QUERIES = {
         GROUP BY dia_semana
         ORDER BY total_aplicacoes DESC;
     """,
-
-    "Consulta 3 — Doses Aplicadas por Etnia Indígena": """
-        SELECT 
-            ei.descricao AS etnia_indigena,
-            COUNT(*) AS total_aplicacoes
-        FROM Paciente AS p
-        JOIN Aplicacao AS a ON p.id = a.paciente_fk
-        JOIN EtniaIndigena AS ei ON p.etnia_indigena_fk = ei.codigo
-        GROUP BY ei.descricao
-        ORDER BY total_aplicacoes DESC;
-    """,
-
-    "Consulta 4 — Top Municípios com Maior Número de Doses Aplicadas": """
+    "Consulta 3 — Top Municípios com Maior Número de Doses Aplicadas": """
         SELECT 
             m.nome AS municipio,
             COUNT(*) AS total_doses
@@ -63,49 +51,25 @@ QUERIES = {
         LIMIT 10;
     """,
 
-    "Consulta 5 — Locais Anatômicos Mais Utilizados": """
+    "Consulta 4 — Locais Anatômicos Mais Utilizados": """
         SELECT 
             l.descricao AS local_anatomico,
-            COUNT(*) AS total
+            COUNT(*) AS total_aplicacoes
         FROM Aplicacao AS a
         JOIN LocalAplicacao AS l ON a.local_aplicacao_fk = l.codigo
+        WHERE l.descricao != 'Sem registro no sistema de informação de origem' 
         GROUP BY l.descricao
-        ORDER BY total DESC;
+        ORDER BY total_aplicacoes DESC
+        LIMIT 15;
     """,
-
-    "Consulta 6 — Total por raça/cor": """
-        SELECT
-            rc.descricao AS raca_cor,
-            COUNT(p.id) AS total_pacientes
-        FROM Paciente AS p
-        JOIN RacaCor AS rc ON p.raca_cor_fk = rc.codigo
-        GROUP BY rc.descricao
-        ORDER BY total_pacientes DESC;
-    """,
-
-    "Consulta 7 — Doses por fabricante em BH": """
-        SELECT
-            f.descricao AS fabricante,
-            COUNT(a.vacina_fk) AS total_doses_bh
-        FROM Aplicacao AS a
-        JOIN Vacina AS v ON a.vacina_fk = v.id
-        JOIN Fabricante AS f ON v.fabricante_fk = f.codigo
-        JOIN Estabelecimento AS e ON a.estabelecimento_fk = e.id
-        JOIN Municipio AS m ON e.municipio_fk = m.codigo
-        WHERE m.nome = 'BELO HORIZONTE'
-        GROUP BY f.descricao
-        ORDER BY total_doses_bh DESC;
-    """
 }
 
 DESCRICOES = {
     "Consulta 1 — Cobertura Vacinal por Faixa Etária": "Avalia o alcance da vacinação em diferentes faixas etárias.",
     "Consulta 2 — Vacinação por dia da semana": "Exibe em quais dias da semana ocorrem mais aplicações.",
-    "Consulta 3 — Doses Aplicadas por Etnia Indígena": "Analisa a distribuição de vacinas entre etnias indígenas.",
-    "Consulta 4 — Top Municípios com Maior Número de Doses Aplicadas": "Mostra os municípios com mais vacinações registradas.",
-    "Consulta 5 — Locais Anatômicos Mais Utilizados": "Indica os locais do corpo mais utilizados nas aplicações.",
-    "Consulta 6 — Total por raça/cor": "Distribuição de vacinação entre diferentes grupos raciais.",
-    "Consulta 7 — Doses por fabricante em BH": "Mostra quais fabricantes são mais utilizados em BH."
+    "Consulta 3 — Top Municípios com Maior Número de Doses Aplicadas": "Mostra os municípios com mais vacinações registradas.",
+    "Consulta 4 — Locais Anatômicos Mais Utilizados": "Indica os locais do corpo mais utilizados nas aplicações."
+
 }
 
 @st.cache_data(ttl=600)
@@ -116,28 +80,82 @@ def run_query(sql):
 CONSULTAS_COM_GRAFICO = {
     "Consulta 1 — Cobertura Vacinal por Faixa Etária": "bar_chart",
     "Consulta 2 — Vacinação por dia da semana": "bar_chart",
-    "Consulta 3 — Doses Aplicadas por Etnia Indígena": "bar_chart",
-    "Consulta 4 — Top Municípios com Maior Número de Doses Aplicadas": "bar_chart",
-    "Consulta 5 — Locais Anatômicos Mais Utilizados": "bar_chart",
-    "Consulta 6 — Total por raça/cor": "bar_chart",
-    "Consulta 7 — Doses por fabricante em BH": "bar_chart"
+    "Consulta 3 — Top Municípios com Maior Número de Doses Aplicadas": "bar_chart",
+    "Consulta 4 — Locais Anatômicos Mais Utilizados": "bar_chart",
 }
 
 EXPLICACOES_GRAFICOS = {
-    "Consulta 1 — Cobertura Vacinal por Faixa Etária": "Este gráfico mostra a distribuição das vacinas por faixa etária. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Consulta 2 — Vacinação por dia da semana": "Exibe os dias da semana com maior número de aplicações. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Consulta 3 — Doses Aplicadas por Etnia Indígena": "Mostra a distribuição de vacinas entre diferentes etnias indígenas. Lorem ipsum dolor sit amet.",
-    "Consulta 4 — Top Municípios com Maior Número de Doses Aplicadas": "Apresenta os 10 municípios com maior número de doses registradas. Lorem ipsum dolor sit amet.",
-    "Consulta 5 — Locais Anatômicos Mais Utilizados": "Visualiza as partes do corpo onde as vacinas foram mais aplicadas. Lorem ipsum dolor.",
-    "Consulta 6 — Total por raça/cor": "Distribuição da vacinação entre grupos raciais. Lorem ipsum dolor sit amet.",
-    "Consulta 7 — Doses por fabricante em BH": "Mostra os fabricantes mais utilizados na cidade de Belo Horizonte. Lorem ipsum."
+    "Consulta 1 — Cobertura Vacinal por Faixa Etária": """
+        Este gráfico apresenta a distribuição das vacinas aplicadas por faixa etária. As faixas etárias são definidas como:
+        - Crianças (0-11 anos)
+        - Adolescentes (12-17 anos)
+        - Adultos (18-59 anos)
+        - Idosos (60 anos ou mais)
+
+        Cada barra do gráfico representa o número total de doses aplicadas para cada faixa etária. A análise da distribuição pode nos fornecer informações importantes sobre a cobertura vacinal em diferentes grupos da população.
+
+        A partir da visualização, podemos observar que a maioria das vacinas aplicadas estão concentradas nas faixas de Crianças e Adultos. Isso pode indicar um foco maior na imunização infantil e adulta, provavelmente devido à prevalência de campanhas de vacinação para esses grupos. 
+
+        Essa análise pode ser útil para planejar futuras campanhas de vacinação e direcionar esforços para grupos com menor cobertura vacinal, caso seja o caso.
+    """,
+    
+        "Consulta 2 — Vacinação por dia da semana": """
+            Este gráfico apresenta o número total de vacinas aplicadas em cada dia da semana. A distribuição dos dados permite analisar 
+            a variabilidade no volume de vacinação ao longo da semana, ajudando a identificar os dias com maior movimentação de vacinação.
+
+            Observa-se que a maior parte das vacinas são aplicadas durante os dias úteis da semana, de segunda a sexta-feira. Por outro lado, os fins de semana (sábado e domingo) apresentam um número muito menor de aplicações. 
+
+            Essa tendência sugere que a vacinação pode ocorrer predominantemente de segunda a sexta-feira, com uma possível pausa ou redução nas atividades de vacinação durante o fim de semana.
+
+            A análise dessa distribuição é importante para o planejamento logístico de campanhas de vacinação, podendo indicar a necessidade de ajustar os dias de aplicação para atingir a população de maneira mais eficiente, especialmente considerando possíveis filas ou horários de pico.
+        """,
+
+        "Consulta 3 — Top Municípios com Maior Número de Doses Aplicadas": """
+            Este gráfico apresenta os 10 municípios com o maior número de doses aplicadas, permitindo uma visualização clara das regiões 
+            com maior cobertura vacinal.
+
+            A análise mostra que os estados de São Paulo (SP), Rio de Janeiro (RJ) e o município de Manaus se destacam com o maior número 
+            de doses aplicadas. É interessante notar a presença de Manaus entre os líderes, o que pode surpreender, considerando que 
+            outras regiões com maior população ou maior infraestrutura de saúde não aparecem no topo. Essa informação sugere que o programa 
+            de vacinação em Manaus tem sido muito eficaz, e a cidade pode ter implementado estratégias inovadoras ou enfrentado condições 
+            específicas que exigiram uma grande mobilização para alcançar a população.
+
+            Essa análise pode ajudar a entender como as campanhas de vacinação estão sendo distribuídas geograficamente e identificar quais 
+            municípios estão alcançando um maior sucesso na imunização da população. Também pode indicar a necessidade de ajustar os recursos 
+            e esforços em regiões que não estão representadas entre os municípios com maior cobertura vacinal.
+        """,
+
+        "Consulta 4 — Locais Anatômicos Mais Utilizados": """
+            Este gráfico apresenta os locais anatômicos mais comuns para a aplicação das vacinas, destacando os pontos mais frequentes 
+            onde as injeções são administradas.
+
+            A análise mostra que o Deltóide é o local mais utilizado, seguido pelas coxas. Esses locais são preferidos provavelmente devido à facilidade de acesso e maior volume de músculo, 
+            que facilita a administração da vacina.
+
+            Um outro local comum é na boca, que é o mais utilizado após braços e pernas.
+
+            A distribuição dos locais anatômicos pode fornecer insights sobre os métodos preferidos de aplicação.
+        """,
+        "Consulta 5 — Estabelecimentos de saude": """
+            Este gráfico apresenta os locais anatômicos mais comuns para a aplicação das vacinas, destacando os pontos mais frequentes 
+            onde as injeções são administradas.
+
+            A análise mostra que o Deltóide é o local mais utilizado, seguido pelas coxas. Esses locais são preferidos provavelmente devido à facilidade de acesso e maior volume de músculo, 
+            que facilita a administração da vacina.
+
+            Um outro local comum é na boca, que é o mais utilizado após braços e pernas.
+
+            A distribuição dos locais anatômicos pode fornecer insights sobre os métodos preferidos de aplicação.
+        """,
+
 }
 
 def main():
     st.set_page_config("TP2 - Visualização Vacinação", layout="wide")
 
+    # Usando uma chave única para o selectbox
     st.sidebar.title("Escolha a Consulta")
-    opcao = st.sidebar.selectbox("Consulta", list(QUERIES.keys()))
+    opcao = st.sidebar.selectbox("Consulta", list(QUERIES.keys()), key="consulta_selectbox")
     sql_base = QUERIES[opcao]
 
     st.title("Doses Aplicadas pelo Programa Nacional de Imunizações (PNI) em 2025")
@@ -213,8 +231,14 @@ def main():
             try:
                 df = df.set_index(df.columns[0])
                 st.bar_chart(df)
+
+                # Exibe o texto explicativo
+                st.subheader("Análise do Gráfico")
+                st.write(EXPLICACOES_GRAFICOS[opcao])
             except Exception as e:
                 st.error(f"Erro ao exibir gráfico: {e}")
 
 if __name__ == "__main__":
     main()
+
+
